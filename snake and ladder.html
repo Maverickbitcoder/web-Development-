@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Snake and Ladder Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f0f0;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    #board {
+      width: 500px;
+      height: 500px;
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      border: 2px solid #333;
+      background: #fff;
+      position: relative;
+    }
+    .cell {
+      border: 1px solid #999;
+      position: relative;
+    }
+    .cell span {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      font-size: 10px;
+      color: #333;
+    }
+    #dice {
+      font-size: 24px;
+      margin: 20px;
+    }
+    #rollBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #rollBtn:hover {
+      background-color: #45a049;
+    }
+    .player {
+      width: 20px;
+      height: 20px;
+      background-color: red;
+      border-radius: 50%;
+      position: absolute;
+      top: 5px;
+      left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Snake and Ladder Game</h1>
+  <div id="board"></div>
+  <div id="dice">Dice: <span id="diceValue">0</span></div>
+  <button id="rollBtn">Roll Dice</button>
+
+  <script>
+    // Configuration
+    const boardSize = 10;
+    const totalCells = boardSize * boardSize;
+    let playerPosition = 1;
+
+    // Define snakes and ladders (key: start cell, value: destination cell)
+    const snakes = {
+      17: 7,
+      54: 34,
+      62: 19,
+      64: 60,
+      87: 24,
+      93: 73,
+      95: 75,
+      99: 78
+    };
+
+    const ladders = {
+      4: 14,
+      9: 31,
+      20: 38,
+      28: 84,
+      40: 59,
+      51: 67,
+      63: 81,
+      71: 91
+    };
+
+    const board = document.getElementById('board');
+
+    // Create board cells (from 100 to 1 so numbering is in reverse order)
+    for (let i = totalCells; i >= 1; i--) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.setAttribute('id', 'cell' + i);
+
+      // Show the cell number in the corner
+      const cellNumber = document.createElement('span');
+      cellNumber.textContent = i;
+      cell.appendChild(cellNumber);
+
+      board.appendChild(cell);
+    }
+
+    // Create player token and add to starting cell
+    const player = document.createElement('div');
+    player.classList.add('player');
+    document.getElementById('cell1').appendChild(player);
+
+    // Function to update player token position on the board
+    function updatePlayerPosition(newPosition) {
+      // Remove token from old cell
+      const oldCell = document.getElementById('cell' + playerPosition);
+      if (oldCell.contains(player)) {
+        oldCell.removeChild(player);
+      }
+      playerPosition = newPosition;
+      const newCell = document.getElementById('cell' + playerPosition);
+      newCell.appendChild(player);
+    }
+
+    // Function to roll dice and move the player
+    document.getElementById('rollBtn').addEventListener('click', () => {
+      let diceRoll = Math.floor(Math.random() * 6) + 1;
+      document.getElementById('diceValue').textContent = diceRoll;
+
+      let newPosition = playerPosition + diceRoll;
+      if (newPosition > totalCells) {
+        // Do not move if roll exceeds board limit
+        newPosition = playerPosition;
+      }
+
+      // Check for snakes or ladders
+      if (snakes[newPosition]) {
+        alert('Oh no! You landed on a snake. Sliding down from ' + newPosition + ' to ' + snakes[newPosition]);
+        newPosition = snakes[newPosition];
+      } else if (ladders[newPosition]) {
+        alert('Great! You found a ladder. Climbing up from ' + newPosition + ' to ' + ladders[newPosition]);
+        newPosition = ladders[newPosition];
+      }
+
+      updatePlayerPosition(newPosition);
+
+      // Check for win condition
+      if (newPosition === totalCells) {
+        alert('Congratulations! You reached 100 and won the game!');
+        // Reset game
+        updatePlayerPosition(1);
+      }
+    });
+  </script>
+</body>
+</html>

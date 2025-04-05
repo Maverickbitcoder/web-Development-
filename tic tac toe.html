@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tic Tac Toe Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100vh;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    #game {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: #fff;
+      border: 2px solid #333;
+      font-size: 60px;
+      line-height: 100px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s;
+    }
+    .cell:hover {
+      background-color: #e0e0e0;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 20px;
+    }
+    #restart {
+      margin-top: 15px;
+      padding: 8px 16px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    #restart:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+  <div id="game"></div>
+  <div id="status">Player X's turn</div>
+  <button id="restart">Restart Game</button>
+
+  <script>
+    const gameBoard = document.getElementById('game');
+    const statusDiv = document.getElementById('status');
+    const restartBtn = document.getElementById('restart');
+
+    let board;         // Array to keep track of cell values
+    let currentPlayer; // "X" or "O"
+    let gameActive;    // Game status
+
+    // Winning combinations: indices of board array cells
+    const winningCombos = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+
+    // Initialize the game
+    function initGame() {
+      board = Array(9).fill(null);
+      currentPlayer = 'X';
+      gameActive = true;
+      statusDiv.textContent = "Player " + currentPlayer + "'s turn";
+      gameBoard.innerHTML = '';
+
+      // Create cells for the board
+      board.forEach((_, index) => {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.index = index;
+        cell.addEventListener('click', handleCellClick);
+        gameBoard.appendChild(cell);
+      });
+    }
+
+    // Handle cell clicks
+    function handleCellClick(e) {
+      const index = e.target.dataset.index;
+
+      // Check if cell is already filled or game is inactive
+      if (board[index] !== null || !gameActive) {
+        return;
+      }
+
+      // Update board and UI
+      board[index] = currentPlayer;
+      e.target.textContent = currentPlayer;
+
+      // Check for a win or a tie
+      if (checkWin()) {
+        statusDiv.textContent = "Player " + currentPlayer + " wins!";
+        gameActive = false;
+        return;
+      } else if (board.every(cell => cell !== null)) {
+        statusDiv.textContent = "It's a tie!";
+        gameActive = false;
+        return;
+      }
+
+      // Switch player
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusDiv.textContent = "Player " + currentPlayer + "'s turn";
+    }
+
+    // Check win conditions
+    function checkWin() {
+      return winningCombos.some(combo => {
+        return combo.every(index => board[index] === currentPlayer);
+      });
+    }
+
+    // Restart the game
+    restartBtn.addEventListener('click', initGame);
+
+    // Start the game for the first time
+    initGame();
+  </script>
+</body>
+</html>

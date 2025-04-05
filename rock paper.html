@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rock Paper Scissors</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #gameContainer {
+      max-width: 500px;
+      margin: 0 auto;
+      background: #fff;
+      border: 2px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .choices {
+      margin: 20px 0;
+    }
+    button.choice {
+      padding: 10px 20px;
+      margin: 0 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #4CAF50;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    button.choice:hover {
+      background-color: #45a049;
+    }
+    #result {
+      font-size: 18px;
+      margin-top: 20px;
+      min-height: 40px;
+    }
+    #score {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <h1>Rock Paper Scissors</h1>
+    <p>Choose your move:</p>
+    <div class="choices">
+      <button class="choice" data-choice="rock">Rock</button>
+      <button class="choice" data-choice="paper">Paper</button>
+      <button class="choice" data-choice="scissors">Scissors</button>
+    </div>
+    <div id="result"></div>
+    <div id="score">Player: 0 | Computer: 0</div>
+  </div>
+
+  <script>
+    const choices = document.querySelectorAll('.choice');
+    const resultDiv = document.getElementById('result');
+    const scoreDiv = document.getElementById('score');
+
+    let playerScore = 0;
+    let computerScore = 0;
+
+    // Function to generate computer's choice
+    function getComputerChoice() {
+      const options = ['rock', 'paper', 'scissors'];
+      const randomIndex = Math.floor(Math.random() * options.length);
+      return options[randomIndex];
+    }
+
+    // Function to determine the winner of a round
+    function determineWinner(player, computer) {
+      if (player === computer) {
+        return "It's a tie!";
+      }
+
+      if (
+        (player === 'rock' && computer === 'scissors') ||
+        (player === 'paper' && computer === 'rock') ||
+        (player === 'scissors' && computer === 'paper')
+      ) {
+        playerScore++;
+        return `You win! ${player.charAt(0).toUpperCase() + player.slice(1)} beats ${computer}.`;
+      } else {
+        computerScore++;
+        return `You lose! ${computer.charAt(0).toUpperCase() + computer.slice(1)} beats ${player}.`;
+      }
+    }
+    function updateScore() {
+      scoreDiv.textContent = `Player: ${playerScore} | Computer: ${computerScore}`;
+    }
+    function playRound(e) {
+      const playerChoice = e.target.dataset.choice;
+      const computerChoice = getComputerChoice();
+
+      const outcome = determineWinner(playerChoice, computerChoice);
+      resultDiv.textContent = `You chose ${playerChoice}. Computer chose ${computerChoice}. ${outcome}`;
+
+      updateScore();
+    }
+    choices.forEach(button => {
+      button.addEventListener('click', playRound);
+    });
+  </script>
+</body>
+</html>
