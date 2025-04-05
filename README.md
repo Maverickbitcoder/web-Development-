@@ -73,6 +73,9 @@ A classic 2-player turn-based game in a 3x3 grid format.
 2. Open any `.html` file in your preferred browser.
 3. Start playing instantly – no setup required!
 
+```bash
+# Example
+open "tic tac toe.html"
 📦 Mini Web Game Collection
 ├── password creater.html
 ├── rock paper.html
