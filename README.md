@@ -76,9 +76,12 @@ A classic 2-player turn-based game in a 3x3 grid format.
 ```bash
 # Example
 open "tic tac toe.html"
-📦 Mini Web Game Collection
-├── password creater.html
-├── rock paper.html
-├── snake and ladder.html
-├── tic tac toe.html
-└── README.md
+---
+```bash
+mini-web-games/
+├── password creater.html         # Secure password generator game
+├── rock paper.html              # Rock Paper Scissors game
+├── snake and ladder.html        # Snake and Ladder simulation
+├── tic tac toe.html             # Classic Tic Tac Toe game
+└── README.md                    # Project overview and documentation
+
