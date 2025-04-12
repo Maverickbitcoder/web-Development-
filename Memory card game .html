@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Card Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-white mb-4">Memory Game</h1>
+        <p class="text-gray-400 mb-2">Moves: <span id="moves">0</span></p>
+        <button id="reset" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">Reset Game</button>
+    </div>
+    <div id="game-board" class="grid grid-cols-4 gap-4 max-w 640px"></div>
+
+    <script>
+        const cards = [
+            '🎮', '🎮', '🎨', '🎨', '🎲', '🎲', '🎸', '🎸',
+            '🚀', '🚀', '🌈', '🌈', '🎪', '🎪', '🎭', '🎭'
+        ];
+
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function createCard(emoji, index) {
+            const card = document.createElement('div');
+            card.className = 'card bg-gray-800 aspect-square rounded-xl cursor-pointer transform transition-all duration-300 hover:scale-105';
+            card.innerHTML = `
+                <div class="w-full h-full flex items-center justify-center text-4xl">
+                    <div class="card-back">❔</div>
+                    <div class="card-front hidden">${emoji}</div>
+                </div>
+            `;
+            card.dataset.index = index;
+            card.addEventListener('click', () => flipCard(card));
+            return card;
+        }
+
+        function flipCard(card) {
+            if (flippedCards.length === 2 || flippedCards.includes(card) || card.classList.contains('matched')) return;
+
+            card.querySelector('.card-back').classList.add('hidden');
+            card.querySelector('.card-front').classList.remove('hidden');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            const match = card1.querySelector('.card-front').textContent === card2.querySelector('.card-front').textContent;
+
+            if (match) {
+                card1.classList.add('matched', 'bg-green-700');
+                card2.classList.add('matched', 'bg-green-700');
+                matchedPairs++;
+                if (matchedPairs === 8) {
+                    setTimeout(() => alert('Congratulations! You won!'), 500);
+                }
+            } else {
+                setTimeout(() => {
+                    card1.querySelector('.card-back').classList.remove('hidden');
+                    card1.querySelector('.card-front').classList.add('hidden');
+                    card2.querySelector('.card-back').classList.remove('hidden');
+                    card2.querySelector('.card-front').classList.add('hidden');
+                }, 1000);
+            }
+
+            flippedCards = [];
+        }
+
+        function initializeGame() {
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
+            const shuffledCards = shuffle([...cards]);
+            shuffledCards.forEach((emoji, index) => {
+                gameBoard.appendChild(createCard(emoji, index));
+            });
+            matchedPairs = 0;
+            moves = 0;
+            document.getElementById('moves').textContent = moves;
+        }
+
+        document.getElementById('reset').addEventListener('click', initializeGame);
+        initializeGame();
+    </script>
+</body>
+</html>

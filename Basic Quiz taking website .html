@@ -1,0 +1,301 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Quiz Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .float { animation: float 3s ease-in-out infinite; }
+        .gradient-text {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 min-h-screen text-white">
+    <!-- Background Particles -->
+    <div class="fixed inset-0 -z-10">
+        <div id="particles" class="absolute inset-0"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="flex flex-col items-center justify-center min-h-screen">
+            <h1 class="text-6xl font-bold gradient-text mb-8 float">Ultimate Quiz Challenge</h1>
+            <div class="glass rounded-xl p-8 max-w-2xl w-full">
+                <div class="text-center mb-8">
+                    <p class="text-xl mb-4">Test your knowledge across multiple categories!</p>
+                    <div class="flex flex-wrap justify-center gap-4 mb-8">
+                        <div class="bg-blue-500/30 p-4 rounded-lg">
+                            <span class="block text-2xl font-bold">🎮</span>
+                            <span>Gaming</span>
+                        </div>
+                        <div class="bg-green-500/30 p-4 rounded-lg">
+                            <span class="block text-2xl font-bold">🌍</span>
+                            <span>Geography</span>
+                        </div>
+                        <div class="bg-red-500/30 p-4 rounded-lg">
+                            <span class="block text-2xl font-bold">🎬</span>
+                            <span>Movies</span>
+                        </div>
+                        <div class="bg-yellow-500/30 p-4 rounded-lg">
+                            <span class="block text-2xl font-bold">🔬</span>
+                            <span>Science</span>
+                        </div>
+                    </div>
+                    <button id="start-btn" class="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-8 py-3 rounded-full text-xl font-semibold hover:from-purple-600 hover:to-indigo-600 transform hover:scale-105 transition-all">
+                        Start Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden min-h-screen">
+            <div class="max-w-3xl mx-auto">
+                <!-- Progress Bar -->
+                <div class="mb-8">
+                    <div class="flex justify-between mb-2">
+                        <span id="question-counter" class="text-sm">Question 1/10</span>
+                        <span id="timer" class="text-sm">Time: 30s</span>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full">
+                        <div id="progress-bar" class="progress-bar h-full bg-gradient-to-r from-green-400 to-blue-500 rounded-full" style="width: 10%"></div>
+                    </div>
+                </div>
+
+                <!-- Question Card -->
+                <div class="glass rounded-xl p-8 mb-8">
+                    <h2 id="question-text" class="text-2xl font-semibold mb-6"></h2>
+                    <div id="options-container" class="grid gap-4">
+                        <!-- Options will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Score Display -->
+                <div class="flex justify-between items-center glass rounded-xl p-4">
+                    <div>
+                        <span class="text-sm opacity-80">Score</span>
+                        <div id="score" class="text-2xl font-bold">0</div>
+                    </div>
+                    <div>
+                        <span class="text-sm opacity-80">Streak</span>
+                        <div id="streak" class="text-2xl font-bold">0</div>
+                    </div>
+                    <button id="quit-btn" class="bg-red-500/30 px-4 py-2 rounded-lg hover:bg-red-500/50 transition-colors">
+                        Quit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="hidden min-h-screen flex items-center justify-center">
+            <div class="glass rounded-xl p-8 max-w-2xl w-full text-center">
+                <h2 class="text-4xl font-bold mb-6 gradient-text">Quiz Complete!</h2>
+                <div class="space-y-4 mb-8">
+                    <div class="text-2xl">Final Score: <span id="final-score">0</span></div>
+                    <div class="text-xl">Highest Streak: <span id="highest-streak">0</span></div>
+                    <div class="text-xl">Time Taken: <span id="time-taken">0:00</span></div>
+                </div>
+                <div class="flex justify-center gap-4">
+                    <button id="play-again-btn" class="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-3 rounded-full hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105">
+                        Play Again
+                    </button>
+                    <button id="share-btn" class="bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-3 rounded-full hover:from-blue-600 hover:to-indigo-600 transition-all transform hover:scale-105">
+                        Share Score
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                category: "Gaming",
+                question: "Which game features a character named Master Chief?",
+                options: ["Halo", "Gears of War", "Destiny", "Call of Duty"],
+                correct: 0
+            },
+            {
+                category: "Geography",
+                question: "Which is the largest continent by land area?",
+                options: ["North America", "Africa", "Asia", "Europe"],
+                correct: 2
+            },
+            {
+                category: "Movies",
+                question: "Who directed Inception?",
+                options: ["Steven Spielberg", "Christopher Nolan", "Martin Scorsese", "James Cameron"],
+                correct: 1
+            },
+            {
+                category: "Science",
+                question: "What is the chemical symbol for gold?",
+                options: ["Ag", "Fe", "Au", "Cu"],
+                correct: 2
+            },
+            // Add more questions here
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let streak = 0;
+        let highestStreak = 0;
+        let timer;
+        let timeLeft = 30;
+        let startTime;
+
+        // Initialize particles
+        function createParticles() {
+            const particles = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.width = '2px';
+                particle.style.height = '2px';
+                particle.style.background = 'rgba(255, 255, 255, 0.5)';
+                particle.style.borderRadius = '50%';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animation = `float ${Math.random() * 3 + 2}s linear infinite`;
+                particles.appendChild(particle);
+            }
+        }
+
+        function startQuiz() {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            startTime = Date.now();
+            loadQuestion();
+            startTimer();
+        }
+
+        function loadQuestion() {
+            const question = questions[currentQuestion];
+            document.getElementById('question-text').textContent = question.question;
+            document.getElementById('question-counter').textContent = `Question ${currentQuestion + 1}/${questions.length}`;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option bg-white/10 p-4 rounded-lg hover:bg-white/20 transition-colors text-left';
+                button.innerHTML = `
+                    <span class="inline-block w-8 h-8 bg-white/20 rounded-full text-center leading-8 mr-3">${String.fromCharCode(65 + index)}</span>
+                    ${option}
+                `;
+                button.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+
+            document.getElementById('progress-bar').style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+        }
+
+        function checkAnswer(selectedIndex) {
+            const correct = questions[currentQuestion].correct === selectedIndex;
+            const options = document.querySelectorAll('.option');
+
+            options.forEach(option => option.disabled = true);
+
+            if (correct) {
+                options[selectedIndex].classList.add('bg-green-500/30');
+                score += 100 + (streak * 10);
+                streak++;
+                highestStreak = Math.max(highestStreak, streak);
+            } else {
+                options[selectedIndex].classList.add('bg-red-500/30');
+                options[questions[currentQuestion].correct].classList.add('bg-green-500/30');
+                streak = 0;
+            }
+
+            document.getElementById('score').textContent = score;
+            document.getElementById('streak').textContent = streak;
+
+            setTimeout(() => {
+                currentQuestion++;
+                if (currentQuestion < questions.length) {
+                    loadQuestion();
+                    timeLeft = 30;
+                } else {
+                    showResults();
+                }
+            }, 1500);
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
+
+                if (timeLeft <= 0) {
+                    checkAnswer(-1);
+                }
+            }, 1000);
+        }
+
+        function showResults() {
+            clearInterval(timer);
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+
+            const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(timeTaken / 60);
+            const seconds = timeTaken % 60;
+
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('highest-streak').textContent = highestStreak;
+            document.getElementById('time-taken').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function resetQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            streak = 0;
+            highestStreak = 0;
+            timeLeft = 30;
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+        }
+
+        // Event Listeners
+        document.getElementById('start-btn').onclick = startQuiz;
+        document.getElementById('quit-btn').onclick = resetQuiz;
+        document.getElementById('play-again-btn').onclick = resetQuiz;
+        document.getElementById('share-btn').onclick = () => {
+            const text = `I scored ${score} points in Ultimate Quiz Challenge! Can you beat my score?`;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Ultimate Quiz Challenge',
+                    text: text,
+                    url: window.location.href
+                });
+            } else {
+                alert(text);
+            }
+        };
+
+        // Initialize particles on load
+        createParticles();
+    </script>
+</body>
+</html>

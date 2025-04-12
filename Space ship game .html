@@ -1,0 +1,653 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar Conquest Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        @keyframes glowPulse {
+            0% { filter: drop-shadow(0 0 5px #4F46E5); }
+            50% { filter: drop-shadow(0 0 15px #4F46E5); }
+            100% { filter: drop-shadow(0 0 5px #4F46E5); }
+        }
+
+        .star-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .achievement {
+            animation: slideIn 0.5s ease-out, fadeOut 3s ease-in forwards;
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            0%, 70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .power-up {
+            animation: glowPulse 2s infinite;
+        }
+
+        #gameCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .game-ui {
+            position: relative;
+            z-index: 2;
+        }
+
+        .combo-text {
+            position: absolute;
+            font-weight: bold;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen overflow-hidden">
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="game-ui fixed inset-0 flex flex-col items-center justify-between p-8">
+        <div class="w-full max-w-4xl glass-panel rounded-2xl p-6">
+            <div class="flex justify-between items-center">
+                <div class="flex space-x-8">
+                    <div>
+                        <h2 class="text-indigo-400 text-sm">LEVEL</h2>
+                        <p class="text-white text-2xl font-bold" id="levelDisplay">1</p>
+                    </div>
+                    <div>
+                        <h2 class="text-indigo-400 text-sm">SCORE</h2>
+                        <p class="text-white text-2xl font-bold" id="scoreDisplay">0</p>
+                    </div>
+                    <div>
+                        <h2 class="text-indigo-400 text-sm">MULTIPLIER</h2>
+                        <p class="text-white text-2xl font-bold" id="multiplierDisplay">x1</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <h2 class="text-indigo-400 text-sm">ENERGY</h2>
+                        <div class="w-32 h-2 bg-gray-700 rounded-full mt-2">
+                            <div id="energyBar" class="h-full bg-indigo-500 rounded-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <h2 class="text-indigo-400 text-sm">SHIELD</h2>
+                        <div class="w-32 h-2 bg-gray-700 rounded-full mt-2">
+                            <div id="shieldBar" class="h-full bg-blue-500 rounded-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 flex justify-center space-x-4">
+                <div id="powerUpsList" class="flex space-x-2"></div>
+            </div>
+        </div>
+
+        <div class="flex-1"></div>
+
+        <div class="w-full max-w-4xl glass-panel rounded-2xl p-6">
+            <div class="grid grid-cols-4 gap-4">
+                <button id="upgradeBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl p-4 transition-all duration-300 transform hover:scale-105">
+                    Upgrade Ship [U]
+                </button>
+                <button id="repairBtn" class="bg-green-600 hover:bg-green-700 text-white rounded-xl p-4 transition-all duration-300 transform hover:scale-105">
+                    Repair Shield [R]
+                </button>
+                <button id="specialBtn" class="bg-purple-600 hover:bg-purple-700 text-white rounded-xl p-4 transition-all duration-300 transform hover:scale-105">
+                    Special Attack [SPACE]
+                </button>
+                <button id="secondaryBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl p-4 transition-all duration-300 transform hover:scale-105">
+                    Missile Barrage [Q]
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="achievementContainer"></div>
+
+    <div id="gameOverModal" class="hidden fixed inset-0 flex items-center justify-center z-50">
+        <div class="glass-panel rounded-3xl p-8 max-w-lg w-full mx-4">
+            <h2 class="text-4xl font-bold text-white mb-4 text-center">Game Over</h2>
+            <div class="mb-6">
+                <p class="text-gray-300 text-center">Final Score: <span id="finalScore">0</span></p>
+                <p class="text-gray-300 text-center">Highest Combo: <span id="highestCombo">0</span></p>
+                <p class="text-gray-300 text-center">Enemies Destroyed: <span id="enemiesDestroyed">0</span></p>
+            </div>
+            <div class="flex justify-center">
+                <button id="restartBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-8 py-4 text-lg transition-all duration-300 transform hover:scale-105">
+                    Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.score = 0;
+                this.level = 1;
+                this.energy = 100;
+                this.shield = 100;
+                this.multiplier = 1;
+                this.combo = 0;
+                this.highestCombo = 0;
+                this.enemiesDestroyed = 0;
+                this.particles = [];
+                this.enemies = [];
+                this.powerUps = [];
+                this.missiles = [];
+                this.achievements = [];
+                this.isGameOver = false;
+                this.lastTime = 0;
+                this.powerUpTypes = ['rapidFire', 'shield', 'damage', 'speed'];
+                this.activePowerUps = new Map();
+
+                this.player = {
+                    x: window.innerWidth / 2,
+                    y: window.innerHeight / 2,
+                    radius: 20,
+                    speed: 5,
+                    rotation: 0,
+                    powerLevel: 1
+                };
+
+                this.setupCanvas();
+                this.bindEvents();
+                this.spawnEnemies();
+                this.spawnPowerUps();
+                this.gameLoop();
+            }
+
+            setupCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                window.addEventListener('resize', () => {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                });
+            }
+
+            bindEvents() {
+                window.addEventListener('mousemove', (e) => {
+                    if (!this.isGameOver) {
+                        const dx = e.clientX - this.player.x;
+                        const dy = e.clientY - this.player.y;
+                        this.player.rotation = Math.atan2(dy, dx);
+                        this.player.x += (e.clientX - this.player.x) * 0.1;
+                        this.player.y += (e.clientY - this.player.y) * 0.1;
+                    }
+                });
+
+                window.addEventListener('keydown', (e) => {
+                    if (!this.isGameOver) {
+                        switch(e.key.toLowerCase()) {
+                            case 'u':
+                                this.upgradeShip();
+                                break;
+                            case 'r':
+                                this.repairShield();
+                                break;
+                            case ' ':
+                                e.preventDefault();
+                                this.specialAttack();
+                                break;
+                            case 'q':
+                                this.launchMissileBarrage();
+                                break;
+                        }
+                    }
+                });
+
+                document.getElementById('upgradeBtn').addEventListener('click', () => this.upgradeShip());
+                document.getElementById('repairBtn').addEventListener('click', () => this.repairShield());
+                document.getElementById('specialBtn').addEventListener('click', () => this.specialAttack());
+                document.getElementById('secondaryBtn').addEventListener('click', () => this.launchMissileBarrage());
+                document.getElementById('restartBtn').addEventListener('click', () => this.restart());
+            }
+
+            spawnEnemies() {
+                if (this.isGameOver) return;
+
+                const enemyTypes = ['normal', 'fast', 'tank', 'bomber'];
+                const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+
+                const enemy = {
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    radius: type === 'tank' ? 25 : 15,
+                    speed: type === 'fast' ? 3 + this.level * 0.5 : 2 + this.level * 0.3,
+                    rotation: Math.random() * Math.PI * 2,
+                    health: type === 'tank' ? 3 : 1,
+                    type
+                };
+
+                this.enemies.push(enemy);
+                setTimeout(() => this.spawnEnemies(), 2000 / this.level);
+            }
+
+            spawnPowerUps() {
+                if (this.isGameOver) return;
+
+                const type = this.powerUpTypes[Math.floor(Math.random() * this.powerUpTypes.length)];
+                const powerUp = {
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    radius: 15,
+                    type,
+                    collected: false
+                };
+
+                this.powerUps.push(powerUp);
+                setTimeout(() => this.spawnPowerUps(), 5000);
+            }
+
+            createParticles(x, y, color, count) {
+                for (let i = 0; i < count; i++) {
+                    this.particles.push({
+                        x,
+                        y,
+                        vx: (Math.random() - 0.5) * 8,
+                        vy: (Math.random() - 0.5) * 8,
+                        radius: Math.random() * 3,
+                        color,
+                        life: 1
+                    });
+                }
+            }
+
+            showAchievement(title) {
+                const achievement = document.createElement('div');
+                achievement.className = 'achievement glass-panel text-white p-4 rounded-lg';
+                achievement.innerHTML = `🏆 ${title}`;
+                document.getElementById('achievementContainer').appendChild(achievement);
+                setTimeout(() => achievement.remove(), 3000);
+            }
+
+            updateParticles() {
+                this.particles = this.particles.filter(particle => {
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.life -= 0.02;
+                    return particle.life > 0;
+                });
+            }
+
+            updatePowerUps() {
+                this.powerUps.forEach(powerUp => {
+                    const dx = this.player.x - powerUp.x;
+                    const dy = this.player.y - powerUp.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < this.player.radius + powerUp.radius && !powerUp.collected) {
+                        powerUp.collected = true;
+                        this.activatePowerUp(powerUp.type);
+                        this.createParticles(powerUp.x, powerUp.y, '255, 215, 0', 20);
+                    }
+                });
+
+                this.powerUps = this.powerUps.filter(powerUp => !powerUp.collected);
+            }
+
+            activatePowerUp(type) {
+                const duration = 10000;
+                let effect;
+
+                switch(type) {
+                    case 'rapidFire':
+                        effect = () => { this.player.powerLevel++; };
+                        break;
+                    case 'shield':
+                        this.shield = Math.min(150, this.shield + 50);
+                        return;
+                    case 'damage':
+                        effect = () => { this.multiplier *= 2; };
+                        break;
+                    case 'speed':
+                        effect = () => { this.player.speed *= 1.5; };
+                        break;
+                }
+
+                if (this.activePowerUps.has(type)) {
+                    clearTimeout(this.activePowerUps.get(type));
+                }
+
+                effect();
+                this.activePowerUps.set(type, setTimeout(() => {
+                    switch(type) {
+                        case 'rapidFire':
+                            this.player.powerLevel = Math.max(1, this.player.powerLevel - 1);
+                            break;
+                        case 'damage':
+                            this.multiplier = Math.max(1, this.multiplier / 2);
+                            break;
+                        case 'speed':
+                            this.player.speed /= 1.5;
+                            break;
+                    }
+                    this.activePowerUps.delete(type);
+                }, duration));
+
+                this.updatePowerUpUI();
+            }
+
+            updatePowerUpUI() {
+                const container = document.getElementById('powerUpsList');
+                container.innerHTML = '';
+
+                this.activePowerUps.forEach((_, type) => {
+                    const icon = document.createElement('div');
+                    icon.className = 'power-up bg-yellow-500 w-8 h-8 rounded-full flex items-center justify-center text-white';
+                    icon.textContent = type[0].toUpperCase();
+                    container.appendChild(icon);
+                });
+            }
+
+            drawParticles() {
+                this.particles.forEach(particle => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = `rgba(${particle.color}, ${particle.life})`;
+                    this.ctx.fill();
+                });
+            }
+
+            launchMissileBarrage() {
+                if (this.energy >= 30) {
+                    this.energy -= 30;
+                    for (let i = 0; i < 5; i++) {
+                        const angle = this.player.rotation + (i - 2) * 0.2;
+                        this.missiles.push({
+                            x: this.player.x,
+                            y: this.player.y,
+                            vx: Math.cos(angle) * 10,
+                            vy: Math.sin(angle) * 10,
+                            radius: 5
+                        });
+                    }
+                    this.updateUI();
+                }
+            }
+
+            updateMissiles() {
+                this.missiles = this.missiles.filter(missile => {
+                    missile.x += missile.vx;
+                    missile.y += missile.vy;
+
+                    if (missile.x < 0 || missile.x > this.canvas.width ||
+                        missile.y < 0 || missile.y > this.canvas.height) {
+                        return false;
+                    }
+
+                    this.enemies.forEach(enemy => {
+                        const dx = missile.x - enemy.x;
+                        const dy = missile.y - enemy.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < enemy.radius + missile.radius) {
+                            enemy.health--;
+                            this.createParticles(missile.x, missile.y, '255, 165, 0', 10);
+                            return false;
+                        }
+                    });
+
+                    return true;
+                });
+            }
+
+            updateEnemies() {
+                this.enemies = this.enemies.filter(enemy => {
+                    const dx = this.player.x - enemy.x;
+                    const dy = this.player.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    enemy.rotation = Math.atan2(dy, dx);
+
+                    if (enemy.type === 'bomber') {
+                        if (distance < 150) {
+                            enemy.health = 0;
+                            this.createParticles(enemy.x, enemy.y, '255, 0, 0', 30);
+                            this.shield -= 20;
+                        }
+                    }
+
+                    enemy.x += Math.cos(enemy.rotation) * enemy.speed;
+                    enemy.y += Math.sin(enemy.rotation) * enemy.speed;
+
+                    if (distance < this.player.radius + enemy.radius) {
+                        this.shield -= enemy.type === 'tank' ? 20 : 10;
+                        this.combo = 0;
+                        this.createParticles(enemy.x, enemy.y, '255, 0, 0', 20);
+                        this.updateUI();
+
+                        if (this.shield <= 0) {
+                            this.gameOver();
+                        }
+                        return false;
+                    }
+
+                    return enemy.health > 0;
+                });
+            }
+
+            updateUI() {
+                document.getElementById('scoreDisplay').textContent = this.score;
+                document.getElementById('levelDisplay').textContent = this.level;
+                document.getElementById('multiplierDisplay').textContent = `x${this.multiplier}`;
+                document.getElementById('energyBar').style.width = `${this.energy}%`;
+                document.getElementById('shieldBar').style.width = `${this.shield}%`;
+            }
+
+            upgradeShip() {
+                if (this.energy >= 30) {
+                    this.energy -= 30;
+                    this.player.speed += 0.5;
+                    this.level++;
+                    this.updateUI();
+                    this.showAchievement('Ship Upgraded!');
+                }
+            }
+
+            repairShield() {
+                if (this.energy >= 20) {
+                    this.energy -= 20;
+                    this.shield = Math.min(100, this.shield + 30);
+                    this.updateUI();
+                }
+            }
+
+            specialAttack() {
+                if (this.energy >= 50) {
+                    this.energy -= 50;
+                    this.enemies.forEach(enemy => {
+                        this.createParticles(enemy.x, enemy.y, '255, 165, 0', 30);
+                        this.score += 100 * this.multiplier;
+                        this.enemiesDestroyed++;
+                    });
+                    this.enemies = [];
+                    this.combo++;
+                    this.highestCombo = Math.max(this.combo, this.highestCombo);
+                    this.updateUI();
+                }
+            }
+
+            gameOver() {
+                this.isGameOver = true;
+                document.getElementById('finalScore').textContent = this.score;
+                document.getElementById('highestCombo').textContent = this.highestCombo;
+                document.getElementById('enemiesDestroyed').textContent = this.enemiesDestroyed;
+                document.getElementById('gameOverModal').classList.remove('hidden');
+            }
+
+            restart() {
+                this.score = 0;
+                this.level = 1;
+                this.energy = 100;
+                this.shield = 100;
+                this.multiplier = 1;
+                this.combo = 0;
+                this.highestCombo = 0;
+                this.enemiesDestroyed = 0;
+                this.enemies = [];
+                this.powerUps = [];
+                this.particles = [];
+                this.missiles = [];
+                this.isGameOver = false;
+                this.player.powerLevel = 1;
+                this.player.speed = 5;
+                document.getElementById('gameOverModal').classList.add('hidden');
+                this.updateUI();
+                this.spawnEnemies();
+                this.spawnPowerUps();
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw player
+                this.ctx.save();
+                this.ctx.translate(this.player.x, this.player.y);
+                this.ctx.rotate(this.player.rotation);
+                this.ctx.beginPath();
+                this.ctx.moveTo(20, 0);
+                this.ctx.lineTo(-10, -10);
+                this.ctx.lineTo(-10, 10);
+                this.ctx.closePath();
+                this.ctx.fillStyle = '#4F46E5';
+                this.ctx.fill();
+                if (this.player.powerLevel > 1) {
+                    this.ctx.strokeStyle = '#FCD34D';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                }
+                this.ctx.restore();
+
+                // Draw enemies
+                this.enemies.forEach(enemy => {
+                    this.ctx.save();
+                    this.ctx.translate(enemy.x, enemy.y);
+                    this.ctx.rotate(enemy.rotation);
+                    this.ctx.beginPath();
+
+                    switch(enemy.type) {
+                        case 'normal':
+                            this.ctx.moveTo(15, 0);
+                            this.ctx.lineTo(-7, -7);
+                            this.ctx.lineTo(-7, 7);
+                            this.ctx.fillStyle = '#EF4444';
+                            break;
+                        case 'fast':
+                            this.ctx.moveTo(20, 0);
+                            this.ctx.lineTo(-10, -5);
+                            this.ctx.lineTo(-10, 5);
+                            this.ctx.fillStyle = '#10B981';
+                            break;
+                        case 'tank':
+                            this.ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2);
+                            this.ctx.fillStyle = '#7C3AED';
+                            break;
+                        case 'bomber':
+                            this.ctx.moveTo(15, 0);
+                            this.ctx.lineTo(-7, -7);
+                            this.ctx.lineTo(-7, 7);
+                            this.ctx.fillStyle = '#F59E0B';
+                            break;
+                    }
+
+                    this.ctx.closePath();
+                    this.ctx.fill();
+                    this.ctx.restore();
+                });
+
+                // Draw power-ups
+                this.powerUps.forEach(powerUp => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = '#FCD34D';
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = '#FFFFFF';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                });
+
+                // Draw missiles
+                this.missiles.forEach(missile => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(missile.x, missile.y, missile.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = '#F59E0B';
+                    this.ctx.fill();
+                });
+
+                this.drawParticles();
+            }
+
+            gameLoop(timestamp) {
+                const deltaTime = timestamp - this.lastTime;
+                this.lastTime = timestamp;
+
+                if (!this.isGameOver) {
+                    this.updateParticles();
+                    this.updateEnemies();
+                    this.updatePowerUps();
+                    this.updateMissiles();
+                    this.energy = Math.min(100, this.energy + 0.1);
+                    this.updateUI();
+                    this.draw();
+                }
+
+                requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
+            }
+        }
+
+        window.addEventListener('load', () => {
+            new Game();
+        });
+    </script>
+</body>
+</html>
